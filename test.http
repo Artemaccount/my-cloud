@@ -1,5 +1,2 @@
-POST http://localhost:8075/login
-Content-Type: application/json
-
-{"login": "user",
-"password":  "pass"}
+GET http://localhost:8075/test
+auth-token: Bearer_eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIiwiaWF0IjoxNjM4NjA3MDI4LCJleHAiOjE2Mzg2MTA2Mjh9.Wpst_Y17WYFL85OM8o6_oTnl6m0OyIM5pyww8l8vyno

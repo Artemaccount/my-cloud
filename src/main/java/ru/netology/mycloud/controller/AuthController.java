@@ -1,17 +1,13 @@
 package ru.netology.mycloud.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-import ru.netology.mycloud.dto.AuthRequestDto;
+import org.springframework.web.bind.annotation.*;
+import ru.netology.mycloud.dto.AuthRequestDTO;
 import ru.netology.mycloud.model.User;
 import ru.netology.mycloud.security.jwt.JwtTokenProvider;
 import ru.netology.mycloud.service.UserService;
@@ -19,25 +15,33 @@ import ru.netology.mycloud.service.UserService;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestController
-@CrossOrigin
-public class AuthController {
 
+@RestController
+public class AuthController {
+    private final UserService userService;
+    private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
 
-    private final JwtTokenProvider jwtTokenProvider;
 
-    private final UserService userService;
-
-    @Autowired
-    public AuthController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider, UserService userService) {
-        this.authenticationManager = authenticationManager;
-        this.jwtTokenProvider = jwtTokenProvider;
+    public AuthController(UserService userService, JwtTokenProvider jwtTokenProvider, AuthenticationManager authenticationManager) {
         this.userService = userService;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.authenticationManager = authenticationManager;
+    }
+
+    @GetMapping("/test")
+    public ResponseEntity test(@RequestHeader("auth-token") String token) {
+        System.out.println(token);
+        String tokenWithoutBearer = token.substring(7);
+        if (jwtTokenProvider.validateToken(tokenWithoutBearer)) {
+            return ResponseEntity.status(200).body("Success blyat");
+        } else {
+            return ResponseEntity.status(300).body("No blyat");
+        }
     }
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody AuthRequestDto requestDto) {
+    public ResponseEntity login(@RequestBody AuthRequestDTO requestDto) {
         try {
             String login = requestDto.getLogin();
             String token = jwtTokenProvider.createToken(login);
@@ -55,5 +59,11 @@ public class AuthController {
         } catch (AuthenticationException e) {
             throw new BadCredentialsException("Invalid login or password");
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity logout(@RequestHeader("auth-token") String token) {
+        jwtTokenProvider.deleteToken(token);
+        return ResponseEntity.ok("Success logout");
     }
 }

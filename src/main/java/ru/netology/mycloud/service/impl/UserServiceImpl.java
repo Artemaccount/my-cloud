@@ -11,6 +11,11 @@ import ru.netology.mycloud.service.UserService;
 public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
 
+    @Override
+    public User save(User user) {
+       return userRepository.save(user);
+    }
+
     public UserServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
     }

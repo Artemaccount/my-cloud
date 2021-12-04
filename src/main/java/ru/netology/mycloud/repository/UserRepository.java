@@ -5,4 +5,6 @@ import ru.netology.mycloud.model.User;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     User findUserByLogin(String login);
+
+    User save(User user);
 }

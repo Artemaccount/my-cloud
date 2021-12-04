@@ -8,6 +8,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
+import ru.netology.mycloud.model.TokenBlacklist;
+import ru.netology.mycloud.repository.TokenRepository;
 import ru.netology.mycloud.security.JwtUserDetailsService;
 
 import javax.annotation.PostConstruct;
@@ -18,9 +20,11 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
     private JwtUserDetailsService jwtUserDetailsService;
+    private TokenRepository tokenRepository;
 
-    public JwtTokenProvider(JwtUserDetailsService jwtUserDetailsService) {
+    public JwtTokenProvider(JwtUserDetailsService jwtUserDetailsService, TokenRepository tokenRepository) {
         this.jwtUserDetailsService = jwtUserDetailsService;
+        this.tokenRepository = tokenRepository;
     }
 
     @Value("${jwt.token.secret}")
@@ -65,21 +69,31 @@ public class JwtTokenProvider {
     public String resolveToken(HttpServletRequest req) {
         String bearerToken = req.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer_")) {
-            return bearerToken.substring(7, bearerToken.length());
+            return bearerToken.substring(7);
         }
         return null;
     }
+
     public boolean validateToken(String token) {
-        try {
-            Jws<Claims> claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(token);
+        if (!tokenRepository.existsTokenBlacklistByToken(token)) {
+            try {
+                Jws<Claims> claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(token);
 
-            if (claims.getBody().getExpiration().before(new Date())) {
-                return false;
+                if (claims.getBody().getExpiration().before(new Date())) {
+                    return false;
+                }
+
+                return true;
+            } catch (JwtException | IllegalArgumentException e) {
+                throw new JwtAuthenticationException("JWT token is expired or invalid");
             }
-
-            return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            throw new JwtAuthenticationException("JWT token is expired or invalid");
+        } else {
+            return false;
         }
+    }
+
+    public void deleteToken(String token) {
+        String tokenWithoutBearer = token.substring(7);
+        tokenRepository.save(new TokenBlacklist(tokenWithoutBearer));
     }
 }
