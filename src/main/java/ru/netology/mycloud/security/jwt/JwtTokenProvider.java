@@ -3,6 +3,7 @@ package ru.netology.mycloud.security.jwt;
 import io.jsonwebtoken.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,8 +20,8 @@ import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
-    private JwtUserDetailsService jwtUserDetailsService;
-    private TokenRepository tokenRepository;
+    private final JwtUserDetailsService jwtUserDetailsService;
+    private final TokenRepository tokenRepository;
 
     public JwtTokenProvider(JwtUserDetailsService jwtUserDetailsService, TokenRepository tokenRepository) {
         this.jwtUserDetailsService = jwtUserDetailsService;
@@ -63,7 +64,8 @@ public class JwtTokenProvider {
     }
 
     public String getUsername(String token) {
-        return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody().getSubject();
+        String tokenWithoutBearer = token.substring(7);
+        return Jwts.parser().setSigningKey(secret).parseClaimsJws(tokenWithoutBearer).getBody().getSubject();
     }
 
     public String resolveToken(HttpServletRequest req) {
@@ -75,9 +77,10 @@ public class JwtTokenProvider {
     }
 
     public boolean validateToken(String token) {
-        if (!tokenRepository.existsTokenBlacklistByToken(token)) {
+        String tokenWithoutBearer = token.substring(7);
+        if (!tokenRepository.existsTokenBlacklistByToken(tokenWithoutBearer)) {
             try {
-                Jws<Claims> claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(token);
+                Jws<Claims> claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(tokenWithoutBearer);
 
                 if (claims.getBody().getExpiration().before(new Date())) {
                     return false;
@@ -92,8 +95,9 @@ public class JwtTokenProvider {
         }
     }
 
-    public void deleteToken(String token) {
+    public ResponseEntity deleteToken(String token) {
         String tokenWithoutBearer = token.substring(7);
         tokenRepository.save(new TokenBlacklist(tokenWithoutBearer));
+        return ResponseEntity.ok("Success logout");
     }
 }

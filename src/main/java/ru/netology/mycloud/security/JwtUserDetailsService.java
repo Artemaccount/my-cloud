@@ -29,4 +29,6 @@ public class JwtUserDetailsService implements UserDetailsService {
         log.info("IN loadUserByUsername - user with login: {} successfully loaded", login);
         return jwtUser;
     }
+
+
 }
