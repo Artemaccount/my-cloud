@@ -11,7 +11,6 @@
 * Сборщик Maven
 * Для запуска используется Docker compose
 * Логирование с помощью Slf4j
-* JUnit, Mockito и MockMvc для тестирования
 * Liquibase для миграций
 * JWT для генерации токенов
 
